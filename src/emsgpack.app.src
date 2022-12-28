@@ -1,0 +1,6 @@
+{application, emsgpack, [{description, "Erlang MessagePack library"},
+                         {vsn, "0.1.0"},
+                         {modules, []},
+                         {registered, []},
+                         {applications, [kernel, stdlib]},
+                         {env, []}]}.
