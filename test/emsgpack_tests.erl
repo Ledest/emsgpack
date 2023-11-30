@@ -167,9 +167,15 @@ list_test() ->
                  emsgpack:decode(emsgpack:encode([1, a, "string", {<<"binary">>, atom}]))),
     ?assertEqual([1, <<$a>>, "string", [<<"binary">>, <<"atom">>]],
                  emsgpack:decode(emsgpack:encode([1, a, "string", {<<"binary">>, atom}]), [compat])),
+    ?assertEqual([1, a, "string"|atom],
+                 emsgpack:decode(emsgpack:encode([1, a, "string"|atom]))),
     msgpack() andalso
+    begin
     ?assertEqual({ok, [1, "a", "string", [<<"binary">>, "atom"]]},
                  msgpack:unpack(emsgpack:encode([1, a, "string", {<<"binary">>, atom}]))),
+    ?assertEqual({ok, term_to_binary([1, a, "string"|atom])},
+                 msgpack:unpack(emsgpack:encode([1, a, "string"|atom])))
+    end,
     ok.
 
 term_test() ->

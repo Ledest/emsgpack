@@ -292,30 +292,31 @@ enc_atom(A, O) ->
 -spec enc_list(L::list(), O::#opt{}) -> [iodata()].
 enc_list(L, O) ->
     case io_lib:char_list(L) of
-        true ->
-            B = unicode:characters_to_binary(L),
-            case byte_size(B) of
-                S when S < 1 bsl 5 -> [<<?STR0(S)>>, B];
-                S when S < 1 bsl 8 -> [<<?STR1(S)>>, B];
-                S when S < 1 bsl 16 -> [<<?STR2(S)>>, B];
-                S when S < 1 bsl 32 -> [<<?STR4(S)>>, B];
-                _ -> enc_list_(L, O)
-            end;
+        true -> enc_string(L, O);
         _false -> enc_list_(L, O)
     end.
 
+-compile({inline, enc_string/2}).
+enc_string(L, O) ->
+    B = unicode:characters_to_binary(L),
+    case byte_size(B) of
+        S when S < 1 bsl 5 -> [<<?STR0(S)>>, B];
+        S when S < 1 bsl 8 -> [<<?STR1(S)>>, B];
+        S when S < 1 bsl 16 -> [<<?STR2(S)>>, B];
+        S when S < 1 bsl 32 -> [<<?STR4(S)>>, B];
+        _ -> enc_list_(L, O)
+    end.
+
 -spec enc_list_(L::list(), O::#opt{}) -> [iodata()].
-enc_list_(L, #opt{compat = true} = O) ->
-    case lists:mapfoldl(fun(E, A) -> {enc_(E, O), A + 1} end, 0, L) of
-        {R, S} when S < 1 bsl 4 -> [<<?ARRAY0(S)>>|R];
-        {R, S} when S < 1 bsl 16 -> [<<?ARRAY2(S)>>|R];
-        {R, S} when S < 1 bsl 32 -> [<<?ARRAY4(S)>>|R]
-    end;
-enc_list_(L, O) ->
-    case lists:mapfoldl(fun(E, A) -> {enc_(E, O), A + 1} end, 0, L) of
-        {R, S} when S < 1 bsl 4 -> [<<?ARRAY2(S)>>|R];
+enc_list_(L, #opt{compat = C} = O) ->
+    try lists:mapfoldl(fun(E, A) -> {enc_(E, O), A + 1} end, 0, L) of
+        {R, S} when C, S < 1 bsl 4 -> [<<?ARRAY0(S)>>|R];
+        {R, S} when C, S < 1 bsl 16; S < 1 bsl 4 -> [<<?ARRAY2(S)>>|R];
         {R, S} when S < 1 bsl 32 -> [<<?ARRAY4(S)>>|R];
         _ -> error(undefined)
+    catch
+        error:undefined -> error(undefined);
+        error:_ -> enc_term(L)
     end.
 
 -spec enc_term(T::term()) -> [iodata()].
