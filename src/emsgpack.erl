@@ -156,6 +156,7 @@ enc_(B, _) when is_binary(B) -> enc_binary(B);
 enc_(T, O) when is_tuple(T) -> enc_tuple(T, O);
 enc_(L, O) when is_list(L) -> enc_list(L, O);
 enc_(M, O) when is_map(M) -> enc_map(M, O);
+enc_(B, _) when is_bitstring(B) -> enc_bitstr(B);
 enc_(T, _) -> enc_term(T).
 
 -spec dec_(B::binary(), O::#opt{}) -> {term(), binary()}.
@@ -230,7 +231,6 @@ enc_float(F) ->
         _ -> <<?FLOAT8(F)>>
     end.
 
--compile({inline, enc_binary/1}).
 -spec enc_binary(B::binary()) -> [binary()].
 enc_binary(B) ->
     [case byte_size(B) of
@@ -318,6 +318,10 @@ enc_list_(L, #opt{compat = C} = O) ->
         error:undefined -> error(undefined);
         error:_ -> enc_term(L)
     end.
+
+-compile({inline, enc_bitstr/1}).
+-spec enc_bitstr(B::bitstring()) -> [binary()].
+enc_bitstr(B) -> enc_binary(<<B/bitstring, 0:(8 - bit_size(B) rem 8)>>).
 
 -spec enc_term(T::term()) -> [iodata()].
 enc_term(T) ->
