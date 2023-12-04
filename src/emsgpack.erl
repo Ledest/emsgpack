@@ -110,7 +110,7 @@
 -define(TIMESTAMP8(S, N), ?FIXEXT8(?TIMESTAMP), N:30, S:34).
 -define(TIMESTAMP12(S, N), ?EXT1(12), ?TIMESTAMP, N:4/unit:8, S:8/unit:8).
 
--record(opt, {safe = false :: boolean(), compat = false :: boolean()}).
+-record(opt, {safe = false :: boolean(), compat = false :: boolean(), bitstr :: undefined|binary|term}).
 
 -spec encode(T::term()) -> binary().
 encode(T) -> iolist_to_binary(enc(T)).
@@ -156,7 +156,7 @@ enc_(B, _) when is_binary(B) -> enc_binary(B);
 enc_(T, O) when is_tuple(T) -> enc_tuple(T, O);
 enc_(L, O) when is_list(L) -> enc_list(L, O);
 enc_(M, O) when is_map(M) -> enc_map(M, O);
-enc_(B, _) when is_bitstring(B) -> enc_bitstr(B);
+enc_(B, O) when is_bitstring(B) -> enc_bitstr(B, O);
 enc_(T, _) -> enc_term(T).
 
 -spec dec_(B::binary(), O::#opt{}) -> {term(), binary()}.
@@ -319,9 +319,10 @@ enc_list_(L, #opt{compat = C} = O) ->
         error:_ -> enc_term(L)
     end.
 
--compile({inline, enc_bitstr/1}).
--spec enc_bitstr(B::bitstring()) -> [binary()].
-enc_bitstr(B) -> enc_binary(<<B/bitstring, 0:(8 - bit_size(B) rem 8)>>).
+-compile({inline, enc_bitstr/2}).
+-spec enc_bitstr(B::bitstring(), O::#opt{}) -> [binary()].
+enc_bitstr(B, #opt{bitstr = term}) -> enc_term(B);
+enc_bitstr(B, _) -> enc_binary(<<B/bitstring, 0:(8 - bit_size(B) rem 8)>>).
 
 -spec enc_term(T::term()) -> [iodata()].
 enc_term(T) ->
@@ -394,6 +395,7 @@ options(L) ->
                    ({compat, V}, A) when is_boolean(V) -> A#opt{compat = V};
                    (safe, A) -> A#opt{safe = true};
                    ({safe, V}, A) when is_boolean(V) -> A#opt{safe = V};
-                   (_, A) -> A
+                   ({bitstr, V}, A) when V =:= binary; V =:= term -> A#opt{bitstr = V};
+                   (_, _) -> error(badarg, [L])
                 end,
                 #opt{}, L).

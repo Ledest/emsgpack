@@ -134,7 +134,9 @@ binary_test() ->
     ?assertEqual(<<"binary", (binary:copy(<<"-long">>, 100000))/binary>>,
                  emsgpack:decode(<<198, 500006:4/unit:8, "binary", (binary:copy(<<"-long">>, 100000))/binary>>)),
     ?assertEqual(<<196, 7, "binary", 7:5, 0:3>>, emsgpack:encode(<<"binary", 7:5>>)),
+    ?assertEqual(<<196, 7, "binary", 7:5, 0:3>>, emsgpack:encode(<<"binary", 7:5>>, [{bitstr, binary}])),
     ?assertEqual(<<"binary", 7:5, 0:3>>, emsgpack:decode(<<196, 7, "binary", 7:5, 0:3>>)),
+    ?assertEqual(<<"binary", 7:5>>, emsgpack:decode(emsgpack:encode(<<"binary", 7:5>>, [{bitstr, term}]))),
     msgpack() andalso
     begin
     ?assertEqual({ok, <<"binary">>}, msgpack:unpack(<<196, 6, "binary">>)),
