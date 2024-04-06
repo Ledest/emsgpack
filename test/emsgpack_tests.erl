@@ -209,3 +209,14 @@ timestamp_test() ->
     ?assertEqual(NS, emsgpack:decode(<<215,-1, (NS rem 1000000000):30, (NS div 1000000000):34>>)),
     ?assertEqual(NS, emsgpack:decode(<<199,12,-1, (NS rem 1000000000):4/unit:8, (NS div 1000000000):8/unit:8>>)),
     ok.
+
+ext_test() ->
+    ?assertEqual(<<"ext">>, emsgpack:decode(<<199, 3, (127 + rand:uniform(128)), "ext">>)),
+    ?assertEqual(<<"ext">>, emsgpack:decode(<<200, 0, 3, (127 + rand:uniform(128)), "ext">>)),
+    ?assertEqual(<<"ext">>, emsgpack:decode(<<201, 0, 0, 0, 3, (127 + rand:uniform(128)), "ext">>)),
+    ?assertEqual(<<$f>>, emsgpack:decode(<<212, (127 + rand:uniform(128)), $f>>)),
+    ?assertEqual(<<"fe">>, emsgpack:decode(<<213, (127 + rand:uniform(128)), "fe">>)),
+    ?assertEqual(<<"fext">>, emsgpack:decode(<<214, (127 + rand:uniform(128)), "fext">>)),
+    ?assertEqual(<<"fixext  ">>, emsgpack:decode(<<215, (127 + rand:uniform(128)), "fixext  ">>)),
+    ?assertEqual(<<"fixext  fixext  ">>, emsgpack:decode(<<216, (127 + rand:uniform(128)), "fixext  fixext  ">>)),
+    ok.

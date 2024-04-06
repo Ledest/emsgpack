@@ -198,6 +198,14 @@ dec_(<<?ARRAY04(S), B/binary>>, O) -> dec_list(S, O, B);
 dec_(<<?ARRAY4(S), B/binary>>, O) -> dec_tuple(S, O, B);
 dec_(<<?MAP2(S), B/binary>>, O) -> dec_map(S, O, B);
 dec_(<<?MAP4(S), B/binary>>, O) -> dec_map(S, O, B);
+dec_(<<?EXT1(S), _, B/binary>>, _) -> split_binary(B, S);
+dec_(<<?EXT2(S), _, B/binary>>, _) -> split_binary(B, S);
+dec_(<<?EXT4(S), _, B/binary>>, _) -> split_binary(B, S);
+dec_(<<?FIXEXT1, _, B:1/binary, R/binary>>, _) -> {B, R};
+dec_(<<?FIXEXT2, _, B:2/binary, R/binary>>, _) -> {B, R};
+dec_(<<?FIXEXT4, _, B:4/binary, R/binary>>, _) -> {B, R};
+dec_(<<?FIXEXT8, _, B:8/binary, R/binary>>, _) -> {B, R};
+dec_(<<?FIXEXT16, _, B:16/binary, R/binary>>, _) -> {B, R};
 dec_(_, _) -> error(undefined).
 
 -compile({inline, enc_int/1}).
