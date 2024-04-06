@@ -133,7 +133,6 @@ binary_test() ->
                  emsgpack:encode(<<"binary", (binary:copy(<<"-long">>, 100000))/binary>>)),
     ?assertEqual(<<"binary", (binary:copy(<<"-long">>, 100000))/binary>>,
                  emsgpack:decode(<<198, 500006:4/unit:8, "binary", (binary:copy(<<"-long">>, 100000))/binary>>)),
-    ?assertEqual(<<196, 7, "binary", 7:5, 0:3>>, emsgpack:encode(<<"binary", 7:5>>)),
     ?assertEqual(<<196, 7, "binary", 7:5, 0:3>>, emsgpack:encode(<<"binary", 7:5>>, [{bitstr, binary}])),
     ?assertEqual(<<"binary", 7:5, 0:3>>, emsgpack:decode(<<196, 7, "binary", 7:5, 0:3>>)),
     ?assertEqual(<<"binary", 7:5>>, emsgpack:decode(emsgpack:encode(<<"binary", 7:5>>, [{bitstr, term}]))),
@@ -211,12 +210,17 @@ timestamp_test() ->
     ok.
 
 ext_test() ->
-    ?assertEqual(<<"ext">>, emsgpack:decode(<<199, 3, (rand:uniform(127)), "ext">>)),
-    ?assertEqual(<<"ext">>, emsgpack:decode(<<200, 0, 3, (rand:uniform(127)), "ext">>)),
-    ?assertEqual(<<"ext">>, emsgpack:decode(<<201, 0, 0, 0, 3, (rand:uniform(127)), "ext">>)),
-    ?assertEqual(<<$f>>, emsgpack:decode(<<212, (rand:uniform(127)), $f>>)),
-    ?assertEqual(<<"fe">>, emsgpack:decode(<<213, (rand:uniform(127)), "fe">>)),
-    ?assertEqual(<<"fext">>, emsgpack:decode(<<214, (rand:uniform(127)), "fext">>)),
-    ?assertEqual(<<"fixext  ">>, emsgpack:decode(<<215, (rand:uniform(127)), "fixext  ">>)),
-    ?assertEqual(<<"fixext  fixext  ">>, emsgpack:decode(<<216, (rand:uniform(127)), "fixext  fixext  ">>)),
+    ?assertEqual(<<"ext">>, emsgpack:decode(<<199, 3, (rand:uniform(77)), "ext">>)),
+    ?assertEqual(<<"ext">>, emsgpack:decode(<<200, 0, 3, (rand:uniform(77)), "ext">>)),
+    ?assertEqual(<<"ext">>, emsgpack:decode(<<201, 0, 0, 0, 3, (rand:uniform(77)), "ext">>)),
+    ?assertEqual(<<$f>>, emsgpack:decode(<<212, (rand:uniform(77)), $f>>)),
+    ?assertEqual(<<"fe">>, emsgpack:decode(<<213, (rand:uniform(77)), "fe">>)),
+    ?assertEqual(<<"fext">>, emsgpack:decode(<<214, (rand:uniform(77)), "fext">>)),
+    ?assertEqual(<<"fixext  ">>, emsgpack:decode(<<215, (rand:uniform(77)), "fixext  ">>)),
+    ?assertEqual(<<"fixext  fixext  ">>, emsgpack:decode(<<216, (rand:uniform(77)), "fixext  fixext  ">>)),
+    % bitstring
+    ?assertEqual(<<199, 3, (77 + 5), 1, 2, 3:5, 0:3>>, emsgpack:encode(<<1, 2, 3:5>>)),
+    ?assertEqual(<<1, 2, 3:5>>, emsgpack:decode(<<199, 3, (77 + 5), 1, 2, 3:5, 0:3>>)),
+    ?assertEqual(<<1, 2, 3:5>>, emsgpack:decode(<<200, 0, 3, (77 + 5), 1, 2, 3:5, 0:3>>)),
+    ?assertEqual(<<1, 2, 3:5>>, emsgpack:decode(<<201, 0, 0, 0, 3, (77 + 5), 1, 2, 3:5, 0:3>>)),
     ok.

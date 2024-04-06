@@ -56,6 +56,7 @@
 -define(ARRAY0, 16#9:4).
 -define(TIMESTAMP, 16#FF).
 -define(TERM, 16#83).
+-define(BITSTR, 16#4D).
 
 -define(ARRAY0(S), ?ARRAY0, S:4).
 -define(ARRAY02(S), ?ARRAY2, 0, S:1/unit:8).
@@ -110,7 +111,7 @@
 -define(TIMESTAMP8(S, N), ?FIXEXT8(?TIMESTAMP), N:30, S:34).
 -define(TIMESTAMP12(S, N), ?EXT1(12), ?TIMESTAMP, N:4/unit:8, S:8/unit:8).
 
--record(opt, {safe = false :: boolean(), compat = false :: boolean(), bitstr :: undefined|binary|term}).
+-record(opt, {safe = false :: boolean(), compat = false :: boolean(), bitstr :: undefined|ext|binary|term}).
 
 -spec encode(T::term()) -> binary().
 encode(T) -> iolist_to_binary(enc(T)).
@@ -198,9 +199,9 @@ dec_(<<?ARRAY04(S), B/binary>>, O) -> dec_list(S, O, B);
 dec_(<<?ARRAY4(S), B/binary>>, O) -> dec_tuple(S, O, B);
 dec_(<<?MAP2(S), B/binary>>, O) -> dec_map(S, O, B);
 dec_(<<?MAP4(S), B/binary>>, O) -> dec_map(S, O, B);
-dec_(<<?EXT1(S), _, B/binary>>, _) -> split_binary(B, S);
-dec_(<<?EXT2(S), _, B/binary>>, _) -> split_binary(B, S);
-dec_(<<?EXT4(S), _, B/binary>>, _) -> split_binary(B, S);
+dec_(<<?EXT1(S), T, B/binary>>, _) -> dec_ext(S, T, B);
+dec_(<<?EXT2(S), T, B/binary>>, _) -> dec_ext(S, T, B);
+dec_(<<?EXT4(S), T, B/binary>>, _) -> dec_ext(S, T, B);
 dec_(<<?FIXEXT1, _, B:1/binary, R/binary>>, _) -> {B, R};
 dec_(<<?FIXEXT2, _, B:2/binary, R/binary>>, _) -> {B, R};
 dec_(<<?FIXEXT4, _, B:4/binary, R/binary>>, _) -> {B, R};
@@ -330,7 +331,16 @@ enc_list_(L, #opt{compat = C} = O) ->
 -compile({inline, enc_bitstr/2}).
 -spec enc_bitstr(B::bitstring(), O::#opt{}) -> [binary()].
 enc_bitstr(B, #opt{bitstr = term}) -> enc_term(B);
-enc_bitstr(B, _) -> enc_binary(<<B/bitstring, 0:(8 - bit_size(B) rem 8)>>).
+enc_bitstr(B, #opt{bitstr = binary}) -> enc_binary(<<B/bitstring, 0:(8 - bit_size(B) rem 8)>>);
+enc_bitstr(B, _) ->
+    BS = bit_size(B) rem 8,
+    EB = <<B/bitstring, 0:(8 - BS)>>,
+    [case byte_size(EB) of
+         S when S < 1 bsl 8 -> <<?EXT1(S), (?BITSTR + BS)>>;
+         S when S < 1 bsl 16 -> <<?EXT2(S), (?BITSTR + BS)>>;
+         S when S < 1 bsl 32 -> <<?EXT4(S), (?BITSTR + BS)>>;
+         _ -> error(undefined)
+     end|EB].
 
 -spec enc_term(T::term()) -> [iodata()].
 enc_term(T) ->
@@ -396,6 +406,13 @@ dec_term(B, _) -> B.
 -spec dec_timestamp(S::integer(), N::integer()) -> integer().
 dec_timestamp(S, N) when N < 1000000000 -> S * 1000000000 + N;
 dec_timestamp(_, _) -> error(undefined).
+
+-spec dec_ext(S::non_neg_integer(), T::byte(), B::binary()) -> {term(), binary()}.
+dec_ext(S, T, B) when T > ?BITSTR, T < ?BITSTR + 8 ->
+    BS = (S - 1) * 8 + (T - ?BITSTR),
+    {<<Bits:BS/bitstring, _/bits>>, R} = split_binary(B, S),
+    {Bits, R};
+dec_ext(S, _, B) -> split_binary(B, S).
 
 -spec options(L::proplists:proplist()) -> #opt{}.
 options(L) ->
