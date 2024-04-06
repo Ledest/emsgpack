@@ -211,12 +211,12 @@ timestamp_test() ->
     ok.
 
 ext_test() ->
-    ?assertEqual(<<"ext">>, emsgpack:decode(<<199, 3, (127 + rand:uniform(128)), "ext">>)),
-    ?assertEqual(<<"ext">>, emsgpack:decode(<<200, 0, 3, (127 + rand:uniform(128)), "ext">>)),
-    ?assertEqual(<<"ext">>, emsgpack:decode(<<201, 0, 0, 0, 3, (127 + rand:uniform(128)), "ext">>)),
-    ?assertEqual(<<$f>>, emsgpack:decode(<<212, (127 + rand:uniform(128)), $f>>)),
-    ?assertEqual(<<"fe">>, emsgpack:decode(<<213, (127 + rand:uniform(128)), "fe">>)),
-    ?assertEqual(<<"fext">>, emsgpack:decode(<<214, (127 + rand:uniform(128)), "fext">>)),
-    ?assertEqual(<<"fixext  ">>, emsgpack:decode(<<215, (127 + rand:uniform(128)), "fixext  ">>)),
-    ?assertEqual(<<"fixext  fixext  ">>, emsgpack:decode(<<216, (127 + rand:uniform(128)), "fixext  fixext  ">>)),
+    ?assertEqual(<<"ext">>, emsgpack:decode(<<199, 3, (rand:uniform(127)), "ext">>)),
+    ?assertEqual(<<"ext">>, emsgpack:decode(<<200, 0, 3, (rand:uniform(127)), "ext">>)),
+    ?assertEqual(<<"ext">>, emsgpack:decode(<<201, 0, 0, 0, 3, (rand:uniform(127)), "ext">>)),
+    ?assertEqual(<<$f>>, emsgpack:decode(<<212, (rand:uniform(127)), $f>>)),
+    ?assertEqual(<<"fe">>, emsgpack:decode(<<213, (rand:uniform(127)), "fe">>)),
+    ?assertEqual(<<"fext">>, emsgpack:decode(<<214, (rand:uniform(127)), "fext">>)),
+    ?assertEqual(<<"fixext  ">>, emsgpack:decode(<<215, (rand:uniform(127)), "fixext  ">>)),
+    ?assertEqual(<<"fixext  fixext  ">>, emsgpack:decode(<<216, (rand:uniform(127)), "fixext  fixext  ">>)),
     ok.
