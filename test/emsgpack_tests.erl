@@ -64,15 +64,18 @@ atom_test() ->
 string_test() ->
     ?assertEqual(<<166, "string">>, emsgpack:encode("string")),
     ?assertEqual("string", emsgpack:decode(<<166, "string">>)),
-    ?assertEqual(<<217,46,"string", (binary:copy(<<"-long">>, 8))/binary>>,
+    ?assertEqual(<<"string">>, emsgpack:decode(<<166, "string">>, [{string, binary}])),
+    ?assertEqual(<<217, 46, "string", (binary:copy(<<"-long">>, 8))/binary>>,
                  emsgpack:encode("string" ++ string:copies("-long", 8))),
     ?assertEqual("string" ++ string:copies("-long", 8),
-                 emsgpack:decode(<<217,46,"string", (binary:copy(<<"-long">>, 8))/binary>>)),
+                 emsgpack:decode(<<217, 46, "string", (binary:copy(<<"-long">>, 8))/binary>>)),
+    ?assertEqual(<<"string", (binary:copy(<<"-long">>, 8))/binary>>,
+                 emsgpack:decode(<<217, 46, "string", (binary:copy(<<"-long">>, 8))/binary>>, [{string, binary}])),
     msgpack() andalso
     begin
     ?assertEqual({ok, "string"}, msgpack:unpack(<<166, "string">>)),
     ?assertEqual({ok, "string" ++ string:copies("-long", 8)},
-                 msgpack:unpack(<<217,46,"string", (binary:copy(<<"-long">>, 8))/binary>>))
+                 msgpack:unpack(<<217, 46, "string", (binary:copy(<<"-long">>, 8))/binary>>))
     end,
     ok.
 

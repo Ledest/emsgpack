@@ -111,7 +111,10 @@
 -define(TIMESTAMP8(S, N), ?FIXEXT8(?TIMESTAMP), N:30, S:34).
 -define(TIMESTAMP12(S, N), ?EXT1(12), ?TIMESTAMP, N:4/unit:8, S:8/unit:8).
 
--record(opt, {safe = false :: boolean(), compat = false :: boolean(), bitstr :: undefined|ext|binary|term}).
+-record(opt, {safe = false :: boolean(),
+              compat = false :: boolean(),
+              string = list :: binary|list,
+              bitstr :: undefined|ext|binary|term}).
 
 -spec encode(T::term()) -> binary().
 encode(T) -> iolist_to_binary(enc(T)).
@@ -187,11 +190,15 @@ dec_(<<?SINT4(I), R/binary>>, _) -> {I, R};
 dec_(<<?SINT8(I), R/binary>>, _) -> {I, R};
 dec_(<<?TIMESTAMP4(S), R/binary>>, _) -> {S, R};
 dec_(<<?TIMESTAMP8(S, N), R/binary>>, _) -> {dec_timestamp(S, N), R};
+dec_(<<?STR0(S, B), R/binary>>, #opt{string = binary}) -> {B, R};
 dec_(<<?STR0(S, B), R/binary>>, _) -> {unicode:characters_to_list(B), R};
 dec_(<<?STR01(S, B), R/binary>>, O) -> {dec_atom(B, O), R};
+dec_(<<?STR1(S, B), R/binary>>, #opt{string = binary}) -> {B, R};
 dec_(<<?STR1(S, B), R/binary>>, _) -> {unicode:characters_to_list(B), R};
 dec_(<<?STR02(S, B), R/binary>>, O) -> {dec_atom(B, O), R};
+dec_(<<?STR2(S, B), R/binary>>, #opt{string = binary}) -> {B, R};
 dec_(<<?STR2(S, B), R/binary>>, _) -> {unicode:characters_to_list(B), R};
+dec_(<<?STR4(S, B), R/binary>>, #opt{string = binary}) -> {B, R};
 dec_(<<?STR4(S, B), R/binary>>, _) -> {unicode:characters_to_list(B), R};
 dec_(<<?ARRAY02(S), B/binary>>, O) -> dec_list(S, O, B);
 dec_(<<?ARRAY2(S), B/binary>>, O) -> dec_tuple(S, O, B);
@@ -420,6 +427,7 @@ options(L) ->
                    ({compat, V}, A) when is_boolean(V) -> A#opt{compat = V};
                    (safe, A) -> A#opt{safe = true};
                    ({safe, V}, A) when is_boolean(V) -> A#opt{safe = V};
+                   ({string, V}, A) when V =:= binary; V =:= list -> A#opt{string = V};
                    ({bitstr, V}, A) when V =:= binary; V =:= term -> A#opt{bitstr = V};
                    (_, _) -> error(badarg, [L])
                 end,
