@@ -63,10 +63,13 @@ atom_test() ->
 
 string_test() ->
     ?assertEqual(<<166, "string">>, emsgpack:encode("string")),
+    ?assertEqual(<<166, "string">>, emsgpack:encode(<<"string">>, [{string, binary}])),
     ?assertEqual("string", emsgpack:decode(<<166, "string">>)),
     ?assertEqual(<<"string">>, emsgpack:decode(<<166, "string">>, [{string, binary}])),
     ?assertEqual(<<217, 46, "string", (binary:copy(<<"-long">>, 8))/binary>>,
                  emsgpack:encode("string" ++ string:copies("-long", 8))),
+    ?assertEqual(<<217, 46, "string", (binary:copy(<<"-long">>, 8))/binary>>,
+                 emsgpack:encode(<<"string", (binary:copy(<<"-long">>, 8))/binary>>, [{string, binary}])),
     ?assertEqual("string" ++ string:copies("-long", 8),
                  emsgpack:decode(<<217, 46, "string", (binary:copy(<<"-long">>, 8))/binary>>)),
     ?assertEqual(<<"string", (binary:copy(<<"-long">>, 8))/binary>>,

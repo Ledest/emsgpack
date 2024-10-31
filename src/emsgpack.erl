@@ -156,7 +156,7 @@ enc_(true, _) -> <<?TRUE>>;
 enc_(A, O) when is_atom(A) -> enc_atom(A, O);
 enc_(I, _) when is_integer(I) -> enc_int(I);
 enc_(F, _) when is_float(F) -> enc_float(F);
-enc_(B, _) when is_binary(B) -> enc_binary(B);
+enc_(B, O) when is_binary(B) -> enc_binary(B, O);
 enc_(T, O) when is_tuple(T) -> enc_tuple(T, O);
 enc_(L, O) when is_list(L) -> enc_list(L, O);
 enc_(M, O) when is_map(M) -> enc_map(M, O);
@@ -247,6 +247,17 @@ enc_float(F) ->
         _ -> <<?FLOAT8(F)>>
     end.
 
+-spec enc_binary(B::binary(), O::#opt{}) -> [binary()].
+enc_binary(B, #opt{string = binary}) ->
+    case byte_size(B) of
+        S when S < 1 bsl 5 -> [<<?STR0(S)>>, B];
+        S when S < 1 bsl 8 -> [<<?STR1(S)>>, B];
+        S when S < 1 bsl 16 -> [<<?STR2(S)>>, B];
+        S when S < 1 bsl 32 -> [<<?STR4(S)>>, B];
+        _ -> enc_binary(B)
+    end;
+enc_binary(B, _) -> enc_binary(B).
+
 -spec enc_binary(B::binary()) -> [binary()].
 enc_binary(B) ->
     [case byte_size(B) of
@@ -306,6 +317,7 @@ enc_atom(A, O) ->
 
 -compile({inline, enc_list/2}).
 -spec enc_list(L::list(), O::#opt{}) -> [iodata()].
+enc_list(L, #opt{string = binary} = O) -> enc_list_(L, O);
 enc_list(L, O) ->
     case io_lib:char_list(L) of
         true -> enc_string(L, O);
